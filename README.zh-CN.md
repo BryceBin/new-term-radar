@@ -369,6 +369,7 @@ python -m pytest -q tests
 
 ## 致谢
 
+- [哥飞 @gefei55](https://x.com/gefei55)：这个雷达是在他公众号文章的知识基础上，按他从自媒体获取信源的思路做出来的。
 - [子木 @CoderJeffLee](https://x.com/CoderJeffLee)：新词表的想法来自他的建议，新名字和它下游的通用词应该放在同一张表里，每行给出决策。
 - [饭特稀 | Fentix @fantexi997](https://x.com/fantexi997)：[GoAnyAPI](https://goanyapi.com)，相关查询和单个国家 Trends 走势这个可选数据源。
 

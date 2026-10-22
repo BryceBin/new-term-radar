@@ -374,6 +374,7 @@ The tests cover the logic (name extraction, scoring, the store, the reports) and
 
 ## Thanks
 
+- [哥飞 @gefei55](https://x.com/gefei55) for the groundwork: the radar is built on what his WeChat articles teach, and on his way of finding signals on social media first.
 - [子木 @CoderJeffLee](https://x.com/CoderJeffLee) for the idea behind the keyword table: a new name and the generic terms downstream of it belong in one table, each with a decision.
 - [饭特稀 | Fentix @fantexi997](https://x.com/fantexi997) for [GoAnyAPI](https://goanyapi.com), the optional source of related queries and one-country Trends series.
 

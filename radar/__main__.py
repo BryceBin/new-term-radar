@@ -207,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--repo", action="append", default=[], metavar="NAME=OWNER/REPO", help="for `keywords`: a name's GitHub repository")
     p.add_argument("--days", type=int, default=7, help="for `leads`: how far back")
     p.add_argument("--json", action="store_true", help="for `keywords` and `leads`: print JSON")
-    p.add_argument("--config", default="config.json")
+    p.add_argument("--config", help="default: ./config.json, or the example the radar ships with when there is none")
     p.add_argument("--state", default="state", help="directory for radar.db and the snapshots")
     p.add_argument("--out", help="write the report (Markdown) here; `daily` also writes a .json beside it")
     p.add_argument("--skip", default="", help="comma-separated: " + ",".join(sorted(SKIPPABLE)))
@@ -230,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_leads(args, state)
     if args.command == "keywords" and not args.names:
         p.error("keywords: give at least one name")
-    cfg = config.load(Path(args.config))
+    cfg = config.load(Path(args.config) if args.config else None)
     if "judge" in args.skip:
         cfg["judge"]["model"] = ""
     state.mkdir(parents=True, exist_ok=True)

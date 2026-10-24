@@ -13,7 +13,7 @@ Signals:
   ⑦ asks      what people ask for on Reddit ("is there an AI tool that…"), sized (weekly; AIsa)
   ⑧ sellers   sites that just put up a payment link: Stripe, Polar, Lemon Squeezy, Gumroad, Creem (weekly; AIsa)
   ④ gsc       queries your own site got impressions for, for the first time (optional)
-  ⑤ review    leads from 14 days ago checked in Google Trends; hit rate per signal (AIsa)
+  ⑤ review    leads from 14 days ago checked in DataForSEO Trends; hit rate per signal (AIsa)
   usecases    the generic terms behind today's names, sized against a benchmark keyword (AIsa)
 
   python -m radar keywords "name one" "name two" [--repo "name one=owner/repo"] [--json]

@@ -59,7 +59,7 @@ def _quiet(fn, *args):
 @server.tool()
 def recent_leads(days: int = 7) -> dict:
     """Leads the radar kept in the last `days` days (newest first), each with its signals, name
-    score and, once reviewed, whether it rose in Google Trends; plus the hit rate per signal.
+    score and, once reviewed, whether it rose in DataForSEO Trends; plus the hit rate per signal.
     Reads the local database only: free and instant. Empty until `sources` or `daily` has run."""
     return cli.kept_leads(_paths()[1], days)
 

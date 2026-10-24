@@ -63,7 +63,7 @@
 | ⑧ 新卖家 | 刚挂上第一条收款链接的站（Stripe Payment Links、Polar、Lemon Squeezy、Gumroad、Creem），来自公开外链数据，带这个站第一次挂链接的日期；老卖家的新页面、平台上的用户页和论坛帖不算；站点自己的介绍交给新词表 | AIsa key；GoAnyAPI 可选，用来看访问量 | 每周约 $0.40 |
 | ⑥ 收入 | 有人付钱的产品，来自 TrustMRR 核验过的收入：增长最快的（30 天收入 $500 以上）和最新上榜的；上次 $0、这次过了门槛的排最前。它自己的介绍会作为依据交给新词表 | TrustMRR key | 免费，6 次请求，每周一次 |
 | ④ Search Console | 你的站第一次获得曝光的查询词（用新鲜数据） | 你自己的 Google 授权 | 免费 |
-| ⑤ 复盘 | 每条线索 14 天后去 Google Trends 核对，和它自己的基线比；按信号统计命中率和提前天数 | AIsa key | 每个搜索写法 $0.0012 |
+| ⑤ 复盘 | 每条线索 14 天后去 DataForSEO Trends 核对，和它自己的基线比；按信号统计命中率和提前天数 | AIsa key | 每个搜索写法 $0.0012 |
 | 新词表 | 针对当天的新名字:找出它背后的通用搜索词(大家拿这个新东西做什么),逐个估算规模、看首页还有没有位置,并给出决策 | AIsa key；[GoAnyAPI](https://goanyapi.com) key 可选 | 5 个名字约每天 $0.18，加上 GoAnyAPI 约 $0.30 |
 | 名字判断 | 小模型给每个词打分：是某个具体东西的名字，还是普通词？ | AIsa key | 每次不到一美分 |
 
@@ -108,7 +108,7 @@
 - **名字涨了；通用词在五天内大多没涨。** PhotoCraft、Claude Haiku 5.5、SynthID Detector 的搜索都明显上升。它们背后的通用词里有一个动了：PhotoCraft 出现后，「photoshop alternative」在美国连续五天比之前高出约 80%。这张表读的全球日数据几乎没反映出来（2、1、1、2、4、2），而另一个来源的美国日数据看得很清楚。所以全球数据显示「没动」，不能证明这个词真的没动。配了 GoAnyAPI 的 key 后，规模较大的行改读单个国家的数据，在那份数据里比之前高 50% 且持续三天算上涨；同一次运行里「photoshop alternative」就显示为 `还在涨 (US)`。
 - 这张表今天靠得住的用处，是告诉你**一个新东西对应的是哪个已有需求、这个需求有多大**（「ai image detector」约每天 2,500 次搜索）。通用词会不会跟着名字涨，要等 14 天复盘才知道，我们现在还没有结果。
 - 对纯模型发布（Claude Haiku 5.5、Nano Banana 2.1），证据都是公告和跑分，提出来的词很弱（「ai coding assistant」）。对只做一件事的产品和仓库效果更好。
-- **Google Trends 最后两天的数据没有结算。** 互不相关的词在这两天会依次返回 0 和 100，看起来像一个尖峰。我们第一遍就是被这个骗了；现在代码里所有读 Trends 的地方都会丢掉这两天，而且上涨必须持续两天才算数。
+- **全球 Trends 曲线最后两天的数据没有结算。** 互不相关的词在这两天会依次返回 0 和 100，看起来像一个尖峰。我们第一遍就是被这个骗了；现在代码里所有读 Trends 的地方都会丢掉这两天，而且上涨必须持续两天才算数。
 - Google Ads 的搜索量滞后约两个月。月搜只有几百的词，Trends 基本读不出可靠的数。
 
 ### 某个数据源没配或挂了的时候
@@ -189,7 +189,7 @@ python -m radar history --out sellers.csv
 
 ## 一个必需的 key，一个可选的
 
-所有付费的部分都走 [AIsa](https://go.aisa.one/yansen-zhu)：X 帖子、Google Trends 和域名数据（背后是 DataForSEO）、判断名字的模型。一个 key，按次付费，不用分别订阅 X API 和 DataForSEO。
+所有付费的部分都走 [AIsa](https://go.aisa.one/yansen-zhu)：X 帖子、DataForSEO Trends（DataForSEO 对 Google 搜索热度的估算，不是 Google Trends 本身）和域名数据、判断名字的模型。一个 key，按次付费，不用分别订阅 X API 和 DataForSEO。
 
 > 上面是推荐链接：通过它注册是对这个项目的支持。从 aisa.one 任何入口拿到的 key 用起来完全一样。
 
@@ -235,7 +235,7 @@ python -m radar daily --skip x,hf --out report.md  # 其余全部，每天一次
 
 其他上升词(判为普通词):anatomy, math, iphone use
 
-### ⑤ 复盘(14 天前报出的词,在 Google Trends 里起没起来)
+### ⑤ 复盘(14 天前报出的词,在 DataForSEO Trends 里起没起来)
 
 | 词 | 首次报出 | 结论 | 提前天数 |
 | strata | 2026-09-25 | hit | 3 |

@@ -1,6 +1,6 @@
 ---
 name: new-term-radar
-description: One run from signal to decision. Finds the names of new AI models, products and repositories seen in the last 24 hours (X, Hugging Face, GitHub, sitemaps), then builds a keyword priority table for them, each new name and the generic search terms behind it, sized against Google Ads volume and Google Trends, with prioritize, watch or skip. Use when the user wants today's new AI keywords, an AI trend radar, or asks what new AI terms are worth building a page or tool for. Also takes names the user already has. Runs the new-term-radar command line; needs an AISA_API_KEY.
+description: One run from signal to decision. Finds the names of new AI models, products and repositories seen in the last 24 hours (X, Hugging Face, GitHub, sitemaps), then builds a keyword priority table for them, each new name and the generic search terms behind it, sized against Google Ads volume and DataForSEO Trends (an estimate of Google search interest), with prioritize, watch or skip. Use when the user wants today's new AI keywords, an AI trend radar, or asks what new AI terms are worth building a page or tool for. Also takes names the user already has. Runs the new-term-radar command line; needs an AISA_API_KEY.
 ---
 
 # New-term radar
@@ -11,7 +11,7 @@ The whole job in one run: collect what is new, then work out which keywords are 
 
 1. Run the pinned release, never a clone of the repository: `uvx new-term-radar==0.5.1 <command> …` (uv fetches that version from PyPI into a throwaway environment; it needs Python 3.10 or newer and nothing else). Without uv: `python3 -m pip install new-term-radar==0.5.1`, then `new-term-radar <command> …`.
 2. Run every command from one working directory, so the snapshots and the state carry over between runs: `$NEW_TERM_RADAR_DIR` if set, else `~/new-term-radar` (create it if it is missing).
-3. An AIsa key must be available, as `AISA_API_KEY` or from the AIsa CLI (`aisa login` stores it in `~/.aisa`): the X posts, the search volumes, Google Trends and the models all go through it. Without it, stop and say so. A key comes from https://go.aisa.one/yansen-zhu.
+3. An AIsa key must be available, as `AISA_API_KEY` or from the AIsa CLI (`aisa login` stores it in `~/.aisa`): the X posts, the search volumes, DataForSEO Trends and the models all go through it. Without it, stop and say so. A key comes from https://go.aisa.one/yansen-zhu.
 4. `TRUSTMRR_API_KEY` is optional: with it the weekly ⑥ revenue signal reads the products people pay for that grow fastest (TrustMRR). Its leads are for the user's own research: TrustMRR's terms forbid republishing the data, so never paste the product list into anything public.
 5. `GOANYAPI_API_KEY` is optional (a key comes from https://goanyapi.com/r/ga-95708898fb). With it the table also holds what people really searched together with each name, and reads the bigger rows from one country's settled series. Without it, tell the user a "flat" reading is weaker evidence.
 6. With no `config.json` in that directory the radar runs on the example list of X accounts and sitemaps it ships with, and says so. Tell the user, and that a `config.json` written there replaces it (the example to start from: https://github.com/zhuyansen/new-term-radar/blob/v0.5.1/config.example.json).

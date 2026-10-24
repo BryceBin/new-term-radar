@@ -12,7 +12,7 @@
     {
       "name": "new-term-radar",
       "source": "./",
-      "description": "Three skills that find the names of new AI models, products and repositories as they surface, and size the search terms behind them with Google Ads volume and Google Trends."
+      "description": "Three skills that find the names of new AI models, products and repositories as they surface, and size the search terms behind them with Google Ads volume and DataForSEO Trends, an estimate of Google search interest."
     }
   ]
 }

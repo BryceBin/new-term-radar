@@ -79,6 +79,7 @@ Each table row: `phrase`, `kind` (`name` or `generic`), `names` (the name it sit
 
    Use the radar's `decision` and add one short reason per row from the fields above.
    `competition` (rows that would be acted on): `verdict` open, mixed or crowded; `weak` = page-one results on sites rated under 30, the slots a new site can take; `kd`; `ads`; `weakest` (the site a new page can push past). A row with `demoted` was rising but moved to watch because page one is crowded: say so. In a name's first week page one is still forming; trust the second reading.
+   `page_age` (the same rows) is recorded for later checks and is not evidence yet: do not use it in a decision or the table.
 3. **Under the table**: each name's long-tails (`tails`), other names found alongside (`cosearch`), then every caveat that applies: missing key, failed source, first run, estimate quality.
 4. **Two or three lines of advice**: which rows are worth a page or a tool now, and what to look at again in a few days. Search volume data runs about two months behind; say so if the user is about to commit work to a number.
 

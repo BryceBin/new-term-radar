@@ -59,6 +59,7 @@ One table, sorted prioritize, watch, skip:
 
 - Use the radar's `decision`, and add one short reason per row in your own words from the fields above (for example: "steady 2,500 a day, did not move on the release" or "rose 80% in the US for five days, still small").
 - `competition` (rows that would be acted on): `verdict` open, mixed or crowded; `weak` = page-one results on sites rated under 30, the slots a new site can take; `kd`; `ads`; `weakest` (the site a new page can push past). A row with `demoted` was rising but moved to watch because page one is crowded: say so. In a name's first week page one is still forming; trust the second reading.
+- `page_age` (the same rows) is recorded for later checks and is not evidence yet: do not use it in a decision or the table.
 - Under the table: the long-tails of each name (`tails`), the other names found alongside (`cosearch`), then every caveat that applies: missing key, failed source, estimate quality.
 - Then two or three lines of advice at most: which rows are worth a page or a tool now, and what to check again in a few days. Search volume data runs about two months behind; say so if the user is about to commit work to a number.
 

@@ -335,7 +335,7 @@ Without uv: `pip install "new-term-radar[mcp]"`, then `"command": "new-term-rada
 
 Point `RADAR_STATE` at the directory your scheduled runs write to and `recent_leads` shows their leads. The same two commands exist on the command line: `python -m radar keywords "name" …` and `python -m radar leads`.
 
-### Codex, TRAE and WorkBuddy
+### Codex, TRAE, WorkBuddy and DeepSeek Harness
 
 The same skills and server work in these agents too. Each starts the server with uvx, so [uv](https://docs.astral.sh/uv/) has to be installed.
 
@@ -362,6 +362,26 @@ trae-cn://trae.ai-ide/mcp-import?type=stdio&name=new-term-radar&config=eyJjb21tY
 ```
 
 **WorkBuddy.** Put the JSON above in `~/.workbuddy/mcp.json`, or paste it under Plugins → MCP servers → Configure MCP.
+
+**DeepSeek Harness.** The skills: `npx skills add zhuyansen/new-term-radar -a codex` installs them in `.agents/skills` (with `-g`, in `~/.agents/skills`), where DeepSeek Harness looks too. The server goes in `~/.dsh/cordis.patch.yml` for every profile, or `~/.dsh/profiles/<name>/cordis.patch.yml` for one:
+
+```yaml
+- insert:
+    - id: new-term-radar
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: new-term-radar
+        transport: stdio
+        command: uvx
+        args: ['--with', 'mcp', 'new-term-radar', 'mcp']
+        env:
+          AISA_API_KEY: !!js process.env.AISA_API_KEY ?? ''
+          GOANYAPI_API_KEY: !!js process.env.GOANYAPI_API_KEY ?? ''
+          RADAR_STATE: /absolute/path/to/state
+        toolCallTimeoutMs: 900000
+```
+
+DeepSeek Harness does not pass the variables that look like keys on to a server, so the keys are named under `env`, read here from your environment. Keep the `?? ''`: without it a variable that is not set fails the entry's check and the server does not start; an empty key counts as no key. A tool gets 60 seconds unless `toolCallTimeoutMs` gives more; a `daily` run needs the 15 minutes above. `dsh web --dump-config` prints the composed entry without starting anything. Tried with DeepSeek Harness 0.2.1-rc.2.
 
 ## Run it on GitHub Actions
 

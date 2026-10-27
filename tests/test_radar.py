@@ -7,8 +7,11 @@ from pathlib import Path
 
 from radar import __main__ as cli
 from radar import breakout, config, gsc, i18n, judge, new_sites, notify, report, review, sitemaps, store
+from radar import page_age as _page_age
 from radar.sources import base_name, novel_names
 from radar.terms import names
+
+REAL_ASK = _page_age.ask       # conftest stubs RDAP for every test; the RDAP test needs the real one
 
 NOW = datetime(2026, 10, 3, 12, tzinfo=timezone.utc)
 
@@ -998,6 +1001,57 @@ def test_page_one_verdicts():
     assert competition.page_kind("youtube.com", "https://youtube.com/watch?v=1", "x") == "video"
     assert competition.page_kind("headshotpro.com", "https://headshotpro.com/", "Free AI Headshot Generator") == "tool"
     assert competition.page_kind("headshots.com", "https://headshots.com/best", "16 Best AI Headshot Generators") == "list"
+
+
+def test_page_one_sites_are_dated_by_registration_and_compared_across_readings(tmp_path, monkeypatch):
+    from radar import page_age
+    born = {"tool-a.example": "2026-08-01", "old.example": "2015-03-03", "example.co.uk": "2026-07-01"}
+    monkeypatch.setattr(page_age, "ask", lambda d: (born[d], "ok") if d in born else ("", "none"))
+    first = {"results": [{"domain": "tool-a.example", "url": "https://tool-a.example/", "position": 2},
+                         {"domain": "old.example", "url": "https://old.example/x", "position": 1},
+                         {"domain": "docs.example.co.uk", "url": "https://docs.example.co.uk/a", "position": 5},
+                         {"domain": "nodate.example", "url": "https://nodate.example/", "position": 9}]}
+    rows = [{"phrase": "new term", "decision": "prioritize"}, {"phrase": "unread", "decision": "watch"}]
+    page_age.record(rows, {"new term": first}, tmp_path, date(2026, 10, 20))
+    got = rows[0]["page_age"]
+    assert (got["dated"], got["young"], got["newest"]) == (3, 2, "2026-08-01") and "page_age" not in rows[1]
+    assert [s["domain"] for s in got["young_sites"]] == ["tool-a.example", "docs.example.co.uk"]
+    assert got["entered"] == {"since": "", "urls": []} and rows[0]["decision"] == "prioritize"   # recorded, not used
+    second = {"results": first["results"][:2] + [{"domain": "fresh.example", "url": "https://fresh.example/", "position": 4}]}
+    page_age.record(rows, {"new term": second}, tmp_path, date(2026, 10, 23))
+    assert rows[0]["page_age"]["entered"] == {"since": "2026-10-20", "urls": ["https://fresh.example/"]}
+    late = rows[:1]
+    page_age.record(late, {"new term": second}, tmp_path, date(2026, 11, 20))              # over a week after: not compared
+    assert late[0]["page_age"]["entered"] == {"since": "", "urls": []}
+
+
+def test_rdap_is_asked_once_more_and_a_registry_without_it_says_none(monkeypatch):
+    from radar import page_age
+    import io
+    calls, answers = [], []
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def urlopen(req, timeout):
+        calls.append(req.full_url)
+        got = answers.pop(0)
+        if isinstance(got, int):
+            raise page_age.urllib.error.HTTPError(req.full_url, got, "no", {}, None)
+        return Reply(json.dumps(got).encode())
+    monkeypatch.setattr(page_age.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(page_age, "RDAP_GAP", 0)
+    monkeypatch.setattr(page_age, "RETRY_PAUSE", 0)
+    answers[:] = [429, {"events": [{"eventAction": "registration", "eventDate": "2026-08-03T00:00:00Z"}]}]
+    assert REAL_ASK("codonic.example") == ("2026-08-03", "ok") and len(calls) == 2
+    answers[:] = [404]
+    assert REAL_ASK("tool.example") == ("", "none")
+    answers[:] = [503, 503]
+    assert REAL_ASK("busy.example") == ("", "failed")
 
 
 def test_a_crowded_rising_term_is_watched_not_prioritized(cfg, tmp_path, monkeypatch):

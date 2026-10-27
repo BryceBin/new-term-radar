@@ -170,20 +170,34 @@ def test_new_site_name_terms():
 
 
 def test_new_sites_drop_domains_ranking_for_a_handful_of_terms(cfg, tmp_path, monkeypatch):
-    answer = {"tasks": [{"result": [{"items": json.loads(FIXTURE.read_text())}]}]}
-    monkeypatch.setattr(new_sites.aisa, "call_all", lambda calls: ({c["call_id"]: answer for c in calls}, 127000))
+    sent = []
+    monkeypatch.setattr(new_sites.aisa, "rest", lambda path, task: (sent.append((path, task)) or {"items": json.loads(FIXTURE.read_text())}, 121200))
     out = new_sites.new_sites(cfg, tmp_path, date(2026, 10, 6))
     domains = [r["domain"] for r in out["sites"]]
     assert "ai-hailuo.com" in domains and "neonwin386.ai" not in domains and "oyo88.ai" not in domains
     assert all(r["new"] for r in out["sites"]) and "hailuo" in [t["term"] for t in out["terms"]]
+    assert sent[0][0] == "domain_analytics/whois/overview/live" and out["cost_micros"] == 121200 * len(cfg["new_sites"]["queries"])
     again = new_sites.new_sites(cfg, tmp_path, date(2026, 10, 13))
     assert not any(r["new"] for r in again["sites"]) and again["terms"] == []
 
 
 def test_new_sites_query_needs_both_dates(cfg):
-    body = new_sites._calls(cfg["new_sites"], date(2026, 10, 6))[0]["arguments"]["body"][0]
+    body = new_sites._task(cfg["new_sites"], date(2026, 10, 6), "%ai%")
     fields = [f[0] for f in body["filters"] if isinstance(f, list)]
     assert fields[:2] == ["created_datetime", "first_seen"] and body["filters"][0][2].startswith("2026-07-08")
+
+
+def test_rest_reads_a_dataforseo_answer_and_its_cost(monkeypatch):
+    from radar import aisa
+    monkeypatch.setattr(aisa, "_post", lambda url, body, timeout: {"status_code": 20000, "cost": 0.1212,
+                                                                    "tasks": [{"status_code": 20000, "result": [{"total_count": 38912}]}]})
+    assert aisa.rest("domain_analytics/whois/overview/live", {"limit": 1}) == ({"total_count": 38912}, 121200)
+    monkeypatch.setattr(aisa, "_post", lambda url, body, timeout: {"status_code": 20000, "tasks": [{"status_code": 40501, "status_message": "Invalid Field"}]})
+    try:
+        aisa.rest("x", {})
+        raise AssertionError("a refused task must raise")
+    except aisa.AisaError as exc:
+        assert "Invalid Field" in str(exc)
 
 
 # --- ④ Search Console ---------------------------------------------------------------------

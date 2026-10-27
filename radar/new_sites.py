@@ -2,7 +2,7 @@
 
 A word that catches on gets sites built for it: ai-hailuo.com was registered in August
 2026 for the Hailuo video model and ranked for 258 keywords within weeks. DataForSEO's
-domain whois overview (through AIsa) finds such domains: registered AND first seen by
+domain whois overview (through AIsa's REST passthrough) finds such domains: registered AND first seen by
 DataForSEO within `window_days`, with estimated organic traffic over `min_etv` and at
 least `min_keywords` ranking keywords. Both dates are needed: whois creation dates get
 rewritten (dagbladet.no, a 2020 site, showed a July 2026 "created"). The keyword floor
@@ -23,7 +23,7 @@ from . import aisa, snap
 from .i18n import t
 from .terms import STOP
 
-TOOL = "post_dataforseo_domains_whois_overview_live"
+PATH = "domain_analytics/whois/overview/live"      # through AIsa's REST passthrough: the router refuses these filters
 LIMIT = 30
 DOMAIN_STOP = {"com", "net", "org", "app", "io", "co", "online", "free", "tool", "tools", "the", "my", "get",
                "official", "site", "hub", "pro", "best", "video", "videos"}
@@ -48,34 +48,39 @@ def site_row(item: dict, query: str) -> dict:
             "keywords": int(organic.get("count") or 0)}
 
 
-def _calls(c: dict, today: date) -> list[dict]:
+def _task(c: dict, today: date, pattern: str) -> dict:
     since = (today - timedelta(days=c["window_days"])).isoformat() + " 00:00:00 +00:00"
-    return [{"call_id": name, "tool": TOOL, "arguments": {"body": [{
-        "limit": LIMIT, "order_by": ["metrics.organic.etv,desc"],
-        "filters": [["created_datetime", ">", since], "and", ["first_seen", ">", since], "and",
-                    ["metrics.organic.etv", ">", c["min_etv"]], "and", ["domain", "like", pattern]]}]}}
-        for name, pattern in c["queries"].items()]
+    return {"limit": LIMIT, "order_by": ["metrics.organic.etv,desc"],
+            "filters": [["created_datetime", ">", since], "and", ["first_seen", ">", since], "and",
+                        ["metrics.organic.etv", ">", c["min_etv"]], "and", ["domain", "like", pattern]]}
 
 
 def new_sites(cfg: dict, state: Path, today: date | None = None) -> dict:
     c = cfg["new_sites"]
     today = today or date.today()
-    data, cost = aisa.call_all(_calls(c, today))
     sites: dict[str, dict] = {}
-    for name in c["queries"]:
-        task = ((data.get(name) or {}).get("tasks") or [{}])[0]
-        for item in ((task.get("result") or [{}])[0] or {}).get("items") or []:
+    cost, answered, errors = 0, 0, []
+    for name, pattern in c["queries"].items():
+        try:
+            result, spent = aisa.rest(PATH, _task(c, today, pattern))
+        except aisa.AisaError as exc:
+            errors.append(f"{name}: {exc}")
+            continue
+        cost, answered = cost + spent, answered + 1
+        for item in result.get("items") or []:
             if keep(item, c["min_etv"], c["min_keywords"]) and item["domain"] not in sites:
                 sites[item["domain"]] = site_row(item, name)
+    if errors and not answered:
+        raise aisa.AisaError("; ".join(errors)[:300])
     path = state / "new_sites.json.gz"
     seen: dict[str, str] = snap.load(path) or {}
     rows = sorted(sites.values(), key=lambda r: -r["etv"])
     for r in rows:
         r["new"] = r["domain"] not in seen
         seen.setdefault(r["domain"], today.isoformat())
-    if data:
+    if answered:
         snap.save(path, seen)
     terms = [{"term": w, "recent": 1, "examples": [f"{r['domain']} · {r['keywords']} keywords"],
               "note": t("note_site", domain=r["domain"], created=r["created"], etv=r["etv"], keywords=r["keywords"])}
              for r in rows if r["new"] for w in name_terms(r["domain"])]
-    return {"queries": len(c["queries"]), "answered": len(data), "cost_micros": cost, "sites": rows, "terms": terms}
+    return {"queries": len(c["queries"]), "answered": answered, "cost_micros": cost, "sites": rows, "terms": terms, "errors": errors}

@@ -113,8 +113,23 @@ def _new_site_lines(ns: dict, cfg: dict) -> list[str]:
     if not sites:
         return lines + [t("recent_none", why=ns.get("error") or t("newsite_none"))]
     lines += [t("newsite_cols"), "|---|---|---|---|---|"]
-    return lines + [f"| {'🆕 ' if r['new'] else ''}[{r['domain']}](https://{r['domain']}) | {r['created']} | {r['first_seen']} | "
-                    f"{r['etv']} | {r['keywords']} |" for r in sites]
+    lines += [f"| {'🆕 ' if r['new'] else ''}[{r['domain']}](https://{r['domain']}) | {r['created']} | {r['first_seen']} | "
+              f"{r['etv']} | {r['keywords']} |" for r in sites]
+    return lines + _site_word_lines([r for r in sites if r.get("words") is not None])
+
+
+def _site_word_lines(sites: list[dict]) -> list[str]:
+    """The first words each new site ranks for in the top 20 (radar/site_words.py)."""
+    if not sites:
+        return []
+    lines = ["", t("newsite_words_h")]
+    for r in sites:
+        said = "; ".join(("⏱ " if w["since"] else "") + t("newsite_word", word=_cell(w["word"]), pos=w["position"] or t("dash"),
+                                                           country=w["country"] or t("dash"), vol=w["volume"] or t("dash"),
+                                                           kd=t("dash") if w["kd"] is None else w["kd"]) for w in r["words"])
+        more = t("newsite_words_more", n=r["top"]) if r["top"] > len(r["words"]) else ""
+        lines.append(f"- {r['domain']}: {said or t('newsite_words_none')}{more}")
+    return lines
 
 
 def _revenue_lines(rv: dict, cfg: dict) -> list[str]:

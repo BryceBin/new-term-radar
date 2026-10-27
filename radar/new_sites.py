@@ -12,6 +12,9 @@ One query per entry of config.json's new_sites.queries (a name and a SQL LIKE pa
 on the domain, e.g. "%ai%"), about $0.13 each, so the radar runs this once a week
 (new_sites.weekday, 0 = Monday). Each site is reported once; the words of its name go
 to the name judge with the other leads ("hailuo").
+
+Each site new this run comes with the first words it ranks for in Google's top 20 (radar/site_words.py,
+`words` in config.json's new_sites: sites asked a run, 0 for none; about $0.013 a site).
 """
 from __future__ import annotations
 
@@ -19,7 +22,7 @@ import re
 from datetime import date, timedelta
 from pathlib import Path
 
-from . import aisa, snap
+from . import aisa, site_words, snap
 from .i18n import t
 from .terms import STOP
 
@@ -80,6 +83,9 @@ def new_sites(cfg: dict, state: Path, today: date | None = None) -> dict:
         seen.setdefault(r["domain"], today.isoformat())
     if answered:
         snap.save(path, seen)
+    if c.get("words", site_words.SITES_MAX):
+        spent, failed = site_words.add_words(rows, c.get("words", site_words.SITES_MAX))
+        cost, errors = cost + spent, errors + failed
     terms = [{"term": w, "recent": 1, "examples": [f"{r['domain']} · {r['keywords']} keywords"],
               "note": t("note_site", domain=r["domain"], created=r["created"], etv=r["etv"], keywords=r["keywords"])}
              for r in rows if r["new"] for w in name_terms(r["domain"])]

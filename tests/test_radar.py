@@ -171,6 +171,7 @@ def test_new_site_name_terms():
 
 def test_new_sites_drop_domains_ranking_for_a_handful_of_terms(cfg, tmp_path, monkeypatch):
     sent = []
+    cfg["new_sites"]["words"] = 0                              # the words each site ranks for: their own test below
     monkeypatch.setattr(new_sites.aisa, "rest", lambda path, task: (sent.append((path, task)) or {"items": json.loads(FIXTURE.read_text())}, 121200))
     out = new_sites.new_sites(cfg, tmp_path, date(2026, 10, 6))
     domains = [r["domain"] for r in out["sites"]]
@@ -185,6 +186,55 @@ def test_new_sites_query_needs_both_dates(cfg):
     body = new_sites._task(cfg["new_sites"], date(2026, 10, 6), "%ai%")
     fields = [f[0] for f in body["filters"] if isinstance(f, list)]
     assert fields[:2] == ["created_datetime", "first_seen"] and body["filters"][0][2].startswith("2026-07-08")
+
+
+def ranked(word, pos, loc=2840, vol=30, kd=0, new=True):
+    """One item of DataForSEO Labs' ranked keywords."""
+    return {"keyword_data": {"keyword": word, "location_code": loc, "keyword_info": {"search_volume": vol},
+                             "keyword_properties": {"keyword_difficulty": kd}},
+            "ranked_serp_element": {"serp_item": {"rank_absolute": pos, "relative_url": "/" + word.replace(" ", "-"),
+                                                  "rank_changes": {"is_new": new}},
+                                    "previous_updated_time": "2026-08-26 03:00:00 +00:00", "last_updated_time": "2026-10-06 03:00:00 +00:00"}}
+
+
+def test_a_new_site_comes_with_the_first_words_it_ranks_for(cfg, tmp_path, monkeypatch):
+    from radar import site_words
+    asked = []
+
+    def rest(path, task):
+        asked.append((path, task.get("target")))
+        if path == new_sites.PATH:
+            return {"items": json.loads(FIXTURE.read_text())}, 121200
+        if len(asked) == 2:                                    # the first site asked ranks; the second does not yet
+            return {"total_count": 7, "items": [ranked("typing test 15 seconds", 1), ranked("股价走势", 6, loc=2158, vol=1000, kd=None, new=False)]}, 12240
+        return {"total_count": None, "items": None}, 12000
+    monkeypatch.setattr(new_sites.aisa, "rest", rest)
+    cfg["new_sites"]["words"] = 2
+    out = new_sites.new_sites(cfg, tmp_path, date(2026, 10, 6))
+    worded = [r for r in out["sites"] if "words" in r]
+    assert len(worded) == 2 and [p for p, d in asked].count(site_words.PATH) == 2
+    hailuo = next(r for r in out["sites"] if r["domain"] == asked[1][1])
+    assert hailuo["top"] == 7 and hailuo["words"][0] == {"word": "typing test 15 seconds", "position": 1, "volume": 30, "kd": 0,
+                                                         "country": "US", "url": "/typing-test-15-seconds",
+                                                         "since": "2026-08-26..2026-10-06"}
+    assert hailuo["words"][1]["country"] == "TW" and hailuo["words"][1]["since"] == ""
+    assert out["cost_micros"] == 121200 * len(cfg["new_sites"]["queries"]) + 12240 + 12000
+    lines = "\n".join(report._site_word_lines(worded))
+    assert f"- {asked[1][1]}: ⏱ typing test 15 seconds #1 US, 30/mo, KD 0; 股价走势 #6 TW, 1000/mo, KD —" in lines
+    assert "(of 7 in the top 20)" in lines and "none in the top 20 yet" in lines
+    again = new_sites.new_sites(cfg, tmp_path, date(2026, 10, 13))       # seen before: no words asked again
+    assert not any("words" in r for r in again["sites"])
+
+
+def test_a_failed_words_call_is_named_and_the_sites_still_come(cfg, tmp_path, monkeypatch):
+    def rest(path, task):
+        if path == new_sites.PATH:
+            return {"items": json.loads(FIXTURE.read_text())}, 121200
+        raise new_sites.aisa.AisaError("Internal Server Error.")
+    monkeypatch.setattr(new_sites.aisa, "rest", rest)
+    cfg["new_sites"]["words"] = 1
+    out = new_sites.new_sites(cfg, tmp_path, date(2026, 10, 6))
+    assert out["sites"] and len(out["errors"]) == 1 and out["errors"][0].endswith("words: Internal Server Error.")
 
 
 def test_rest_reads_a_dataforseo_answer_and_its_cost(monkeypatch):
